@@ -1,8 +1,11 @@
-# Setup script for Redash with Docker on Ubuntu 18.04.
+# Setup script for Redash with Docker on Centos 7.x.
+> Centos 一键安装Redash脚本
 
-This is a reference setup for Redash on a single Ubuntu 18.04 server, which uses Docker and Docker Compose for deployment and management.
+This is a reference setup for Redash on a single Centos 7.x server, which uses Docker and Docker Compose for deployment and management.
+> Redash 安装在单台Centos 7.x 服务器上，使用Docker及Docker-compose管理。
 
 This is the same setup we use for our official images (for AWS & Google Cloud) and can be used as reference if you want to manually setup Redash in a different environment (different OS or different deployment location).
+> 
 
 * `setup.sh` is the script that installs everything and creates the directories.
 * `docker-compose.yml` is the Docker Compose setup we use.
@@ -21,3 +24,4 @@ See [Upgrade Guide](https://redash.io/help/open-source/admin-guide/how-to-upgrad
 ### How do I use `setup.sh` on a different operating system?
 
 You will need to update the `install_docker` function and maybe other functions as well.
+> 你需要更新 install_docker方法，及其他方法如yum等

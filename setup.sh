@@ -1,31 +1,54 @@
 #!/usr/bin/env bash
-# This script setups dockerized Redash on Ubuntu 18.04.
+# This script setups dockerized Redash on Centos 7.x
 set -eu
 
 REDASH_BASE_PATH=/opt/redash
 
+init_env(){
+    if [ ! -f "/usr/bin/wget" ]; then
+        yum -y install wget
+    fi
+    
+    if [ ! -f "/usr/bin/curl" ]; then
+        yum -y install curl
+    fi 
+
+    if [ ! -f "/usr/bin/pwgen" ]; then
+        yum -y install pwgen
+    fi
+
+    if [ ! -f "/usr/bin/json_pp" ]; then
+        yum -y install perl-JSON-PP.noarch
+    fi
+}
+
+
+uninstall_docker(){
+    yum -y remove docker docker-client docker-client-latest
+    yum -y remove docker-common docker-latest docker-latest-logrotate docker-logrotate 
+    yum -y remove docker-selinux docker-engine-selinux docker-engine
+}
+
+
 install_docker(){
     # Install Docker
-    export DEBIAN_FRONTEND=noninteractive
-    sudo apt-get -qqy update
-    DEBIAN_FRONTEND=noninteractive sudo -E apt-get -qqy -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" upgrade 
-    sudo apt-get -yy install apt-transport-https ca-certificates curl software-properties-common wget pwgen
-    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-    sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
-    sudo apt-get update && sudo apt-get -y install docker-ce
+    yum install -y yum-utils device-mapper-persistent-data lvm2
+    yum-config-manager --add-repo http://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
+
+    yum -y install docker-ce
 
     # Install Docker Compose
-    sudo curl -L https://github.com/docker/compose/releases/download/1.22.0/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
-    sudo chmod +x /usr/local/bin/docker-compose
+    curl -L https://github.com/docker/compose/releases/download/1.26.2/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
+    chmod +x /usr/local/bin/docker-compose
 
     # Allow current user to run Docker commands
-    sudo usermod -aG docker $USER
+    usermod -aG docker $USER
 }
 
 create_directories() {
     if [[ ! -e $REDASH_BASE_PATH ]]; then
-        sudo mkdir -p $REDASH_BASE_PATH
-        sudo chown $USER:$USER $REDASH_BASE_PATH
+        mkdir -p $REDASH_BASE_PATH
+        chown $USER:$USER $REDASH_BASE_PATH
     fi
 
     if [[ ! -e $REDASH_BASE_PATH/postgres-data ]]; then
@@ -38,7 +61,7 @@ create_config() {
         rm $REDASH_BASE_PATH/env
         touch $REDASH_BASE_PATH/env
     fi
-
+    
     COOKIE_SECRET=$(pwgen -1s 32)
     SECRET_KEY=$(pwgen -1s 32)
     POSTGRES_PASSWORD=$(pwgen -1s 32)
@@ -65,10 +88,12 @@ setup_compose() {
     echo "export COMPOSE_FILE=/opt/redash/docker-compose.yml" >> ~/.profile
     export COMPOSE_PROJECT_NAME=redash
     export COMPOSE_FILE=/opt/redash/docker-compose.yml
-    sudo docker-compose run --rm server create_db
-    sudo docker-compose up -d
+    docker-compose run --rm server create_db
+    docker-compose up -d
 }
 
+init_env
+# uninstall_docker
 install_docker
 create_directories
 create_config
